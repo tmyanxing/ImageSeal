@@ -1,0 +1,171 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "启动前端开发服务器",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend/imageseal-ui"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*VITE.*",
+          "endsPattern": ".*Local:.*"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false,
+        "group": "dev-servers"
+      },
+      "icon": {
+        "id": "browser",
+        "color": "terminal.ansiGreen"
+      }
+    },
+    {
+      "label": "启动后端API服务",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/backend/ImageSeal.Api/ImageSeal.Api.csproj"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Building.*",
+          "endsPattern": "^.*Application started.*|^.*Now listening on.*|^.*ImageSeal.*已启动.*"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false,
+        "group": "dev-servers"
+      },
+      "icon": {
+        "id": "server",
+        "color": "terminal.ansiBlue"
+      }
+    },
+    {
+      "label": "🚀 启动全栈应用 (前端+后端)",
+      "dependsOn": [
+        "启动前端开发服务器",
+        "启动后端API服务"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "icon": {
+        "id": "rocket",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "📦 构建前端并发布到后端",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend/imageseal-ui"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "icon": {
+        "id": "package",
+        "color": "terminal.ansiYellow"
+      }
+    },
+    {
+      "label": "🎯 运行后端（生产模式）",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/backend/ImageSeal.Api/ImageSeal.Api.csproj",
+        "--configuration",
+        "Release"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "icon": {
+        "id": "play",
+        "color": "terminal.ansiCyan"
+      }
+    },
+    {
+      "label": "🔨 打包成 EXE (Windows x64)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "-c", "Release",
+        "-r", "win-x64",
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:IncludeNativeLibrariesForSelfExtract=true",
+        "-o", "${workspaceFolder}/publish"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/backend/ImageSeal.Api"
+      },
+      "dependsOn": ["📦 构建前端并发布到后端"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "icon": {
+        "id": "desktop-download",
+        "color": "terminal.ansiRed"
+      }
+    },
+    {
+      "label": "📥 安装前端依赖",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend/imageseal-ui"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "icon": {
+        "id": "cloud-download",
+        "color": "terminal.ansiGreen"
+      }
+    }
+  ]
+}
