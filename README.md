@@ -2,6 +2,23 @@
 
 > 一款简单易用的图片水印添加工具，支持自定义水印文字、颜色、透明度、角度等参数，生成斜向重复的透明水印效果。
 
+[![Build and Release](https://github.com/YOUR_USERNAME/ImageSeal/actions/workflows/build-release.yml/badge.svg)](https://github.com/YOUR_USERNAME/ImageSeal/actions/workflows/build-release.yml)
+[![Release](https://img.shields.io/github/v/release/YOUR_USERNAME/ImageSeal)](https://github.com/YOUR_USERNAME/ImageSeal/releases)
+[![Downloads](https://img.shields.io/github/downloads/YOUR_USERNAME/ImageSeal/total)](https://github.com/YOUR_USERNAME/ImageSeal/releases)
+
+## 📥 直接下载使用
+
+**不想配置开发环境？直接下载运行！**
+
+1. 进入 [Releases 页面](https://github.com/YOUR_USERNAME/ImageSeal/releases)
+2. 下载最新版本的 `ImageSeal-vX.X.X-win-x64.zip`
+3. 解压到任意目录
+4. 双击运行 `ImageSeal.exe`
+5. 打开浏览器访问 http://localhost:30032
+6. 开始使用！
+
+> **注意**：首次运行可能需要允许防火墙访问。
+
 ## 🎯 功能特点
 
 - ✅ 上传图片并实时预览
@@ -205,6 +222,19 @@ GET /api/watermark/health
 
 ## 🔧 常见问题
 
+### Q: 如何发布新版本？
+A: 参考 [RELEASE.md](RELEASE.md) 文档，使用 Git 标签触发自动构建。
+
+### Q: 如何验证下载文件的完整性？
+A: 
+```powershell
+# 计算下载文件的 SHA256 哈希
+Get-FileHash ImageSeal-v1.0.0-win-x64.zip -Algorithm SHA256
+
+# 与 .sha256 文件中的值对比
+Get-Content ImageSeal-v1.0.0-win-x64.zip.sha256
+```
+
 ### Q: EXE 文件很大怎么办？
 A: 由于使用了 `--self-contained` 参数，EXE 包含了完整的 .NET 运行时，文件较大是正常的。如果目标机器已安装 .NET 8 运行时，可以去掉此参数减小体积。
 
@@ -213,6 +243,31 @@ A: 程序会优先使用微软雅黑字体，如果系统没有该字体，会�
 
 ### Q: 支持哪些图片格式？
 A: 支持 JPG、PNG、GIF、BMP、WebP 格式的图片。
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'feat: Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 📦 自动化发布
+
+本项目配置了 GitHub Actions 自动化构建：
+
+- **触发方式**：推送 `v*` 标签（如 `v1.0.0`）
+- **构建产物**：Windows x64 单文件 EXE
+- **发布位置**：GitHub Releases
+- **详细文档**：查看 [RELEASE.md](RELEASE.md)
+
+快速发布新版本：
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## 📄 许可证
 

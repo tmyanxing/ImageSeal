@@ -1,0 +1,112 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 触发条件：推送 v 开头的标签，如 v1.0.0
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 .NET 8.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: 安装前端依赖
+      working-directory: ./frontend/imageseal-ui
+      run: npm ci
+      
+    - name: 构建前端
+      working-directory: ./frontend/imageseal-ui
+      run: npm run build
+      
+    - name: 还原后端依赖
+      working-directory: ./backend/ImageSeal.Api
+      run: dotnet restore
+      
+    - name: 发布 Windows x64 版本
+      working-directory: ./backend/ImageSeal.Api
+      run: |
+        dotnet publish -c Release -r win-x64 --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -p:EnableCompressionInSingleFile=true `
+          -o ../../publish/win-x64
+          
+    - name: 创建发布包
+      run: |
+        $version = if ($env:GITHUB_REF -match 'refs/tags/(.*)') { $matches[1] } else { 'dev' }
+        Compress-Archive -Path publish/win-x64/* -DestinationPath "ImageSeal-$version-win-x64.zip"
+        
+    - name: 计算文件哈希
+      run: |
+        $version = if ($env:GITHUB_REF -match 'refs/tags/(.*)') { $matches[1] } else { 'dev' }
+        $hash = (Get-FileHash "ImageSeal-$version-win-x64.zip" -Algorithm SHA256).Hash
+        "$hash  ImageSeal-$version-win-x64.zip" | Out-File -FilePath "ImageSeal-$version-win-x64.zip.sha256" -Encoding UTF8
+        
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: ImageSeal-Windows
+        path: |
+          ImageSeal-*.zip
+          ImageSeal-*.sha256
+        retention-days: 90
+        
+    - name: 创建 GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ImageSeal-*.zip
+          ImageSeal-*.sha256
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## ImageSeal - 图片水印工具 ${{ github.ref_name }}
+          
+          ### 📦 下载
+          
+          - **Windows x64**: ImageSeal-${{ github.ref_name }}-win-x64.zip
+          
+          ### 🚀 使用方法
+          
+          1. 下载并解压 ZIP 文件
+          2. 双击运行 `ImageSeal.exe`
+          3. 打开浏览器访问 http://localhost:30032
+          4. 开始使用水印工具！
+          
+          ### ✨ 功能特点
+          
+          - 上传图片并实时预览
+          - 自定义水印文字、字体大小、颜色
+          - 可调节透明度（0-100%）
+          - 可调节旋转角度（斜向水印）
+          - 可调节水印间距
+          - 一键下载带水印的图片
+          
+          ### 📝 更新内容
+          
+          查看下方自动生成的更新日志
+          
+          ### 🔐 文件校验
+          
+          下载后可使用 SHA256 校验文件完整性：
+          ```powershell
+          Get-FileHash ImageSeal-${{ github.ref_name }}-win-x64.zip -Algorithm SHA256
+          ```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
