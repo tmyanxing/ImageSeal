@@ -16,12 +16,25 @@ request.interceptors.response.use(
 
 export const watermarkApi = {
   /**
-   * 添加水印
+   * 添加图片水印
    * @param {FormData} formData - 包含图片和水印参数的表单数据
    * @returns {Promise} API响应
    */
   addWatermark(formData) {
     return request.post('/watermark/add', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+
+  /**
+   * 添加 PDF 水印
+   * @param {FormData} formData - 包含 PDF 和水印参数的表单数据
+   * @returns {Promise} API响应
+   */
+  addPdfWatermark(formData) {
+    return request.post('/watermark/add-pdf', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

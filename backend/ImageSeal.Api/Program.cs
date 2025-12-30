@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 
 // 注册服务
 builder.Services.AddScoped<IWatermarkService, WatermarkService>();
+builder.Services.AddScoped<IPdfWatermarkService, PdfWatermarkService>();
 
 // 配置 CORS（允许前端调用）
 builder.Services.AddCors(options =>

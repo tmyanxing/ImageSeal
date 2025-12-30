@@ -66,3 +66,29 @@ public class WatermarkResult
     /// </summary>
     public string FileName { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// PDF 水印结果模型
+/// </summary>
+public class PdfWatermarkResult
+{
+    /// <summary>
+    /// Base64 编码的 PDF 数据
+    /// </summary>
+    public string PdfBase64 { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// PDF MIME 类型
+    /// </summary>
+    public string MimeType { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// 文件名
+    /// </summary>
+    public string FileName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// PDF 页数
+    /// </summary>
+    public int PageCount { get; set; }
+}

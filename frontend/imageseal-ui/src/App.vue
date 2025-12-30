@@ -15,27 +15,35 @@
             <a-row :gutter="24">
               <!-- 左侧：上传和设置 -->
               <a-col :xs="24" :lg="8">
-                <a-card title="📤 上传图片" class="upload-card">
+                <a-card title="📤 上传文件" class="upload-card">
                   <a-upload-dragger
                     v-model:fileList="fileList"
                     name="file"
                     :maxCount="1"
                     :beforeUpload="beforeUpload"
                     :showUploadList="false"
-                    accept=".jpg,.jpeg,.png,.gif,.bmp,.webp"
+                    accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.pdf"
                     @change="handleFileChange"
                   >
                     <p class="ant-upload-drag-icon">
                       <inbox-outlined />
                     </p>
-                    <p class="ant-upload-text">点击或拖拽图片到此区域</p>
-                    <p class="ant-upload-hint">支持 JPG、PNG、GIF、BMP、WebP 格式</p>
+                    <p class="ant-upload-text">点击或拖拽文件到此区域</p>
+                    <p class="ant-upload-hint">支持 JPG、PNG、GIF、BMP、WebP、PDF 格式</p>
                   </a-upload-dragger>
                   
-                  <div v-if="originalImage" class="original-preview">
+                  <div v-if="originalImage && !isPdfFile" class="original-preview">
                     <a-divider>原图预览</a-divider>
                     <img :src="originalImage" alt="原图" class="preview-img" />
                     <p class="file-name">{{ selectedFileName }}</p>
+                  </div>
+                  
+                  <div v-if="isPdfFile" class="original-preview">
+                    <a-divider>PDF 文件</a-divider>
+                    <div class="pdf-info">
+                      <file-pdf-outlined style="font-size: 48px; color: #ff4d4f;" />
+                      <p class="file-name">{{ selectedFileName }}</p>
+                    </div>
                   </div>
                 </a-card>
 
@@ -107,7 +115,7 @@
                     size="large" 
                     block 
                     :loading="loading"
-                    :disabled="!originalImage || !watermarkSettings.text"
+                    :disabled="!selectedFile || !watermarkSettings.text"
                     @click="generateWatermark"
                   >
                     <template #icon><thunderbolt-outlined /></template>
@@ -121,12 +129,12 @@
                 <a-card title="🖼️ 效果预览" class="preview-card">
                   <template #extra>
                     <a-button 
-                      v-if="resultImage" 
+                      v-if="resultImage || resultPdf" 
                       type="primary" 
-                      @click="downloadImage"
+                      @click="downloadResult"
                     >
                       <template #icon><download-outlined /></template>
-                      下载图片
+                      {{ isPdfFile ? '下载 PDF' : '下载图片' }}
                     </a-button>
                   </template>
                   
@@ -134,11 +142,22 @@
                     <a-spin size="large" tip="正在生成水印..." />
                   </div>
                   
-                  <div v-else-if="resultImage" class="result-container">
+                  <div v-else-if="resultImage && !isPdfFile" class="result-container">
                     <img :src="resultImage" alt="水印效果" class="result-img" />
                   </div>
                   
-                  <a-empty v-else description="上传图片并设置水印后，点击生成按钮预览效果">
+                  <div v-else-if="resultPdf && isPdfFile" class="result-container">
+                    <div class="pdf-preview-container">
+                      <iframe 
+                        :src="resultPdf" 
+                        class="pdf-preview-iframe"
+                        title="PDF 预览"
+                      />
+                    </div>
+                    <p class="pdf-preview-hint">{{ resultMessage }}</p>
+                  </div>
+                  
+                  <a-empty v-else description="上传图片或 PDF 并设置水印后，点击生成按钮预览效果">
                     <template #image>
                       <picture-outlined style="font-size: 80px; color: #d9d9d9;" />
                     </template>
@@ -164,7 +183,8 @@ import {
   InboxOutlined, 
   ThunderboltOutlined, 
   DownloadOutlined,
-  PictureOutlined 
+  PictureOutlined,
+  FilePdfOutlined
 } from '@ant-design/icons-vue'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import { watermarkApi } from '@/api/watermark'
@@ -175,8 +195,11 @@ const selectedFile = ref(null)
 const selectedFileName = ref('')
 const originalImage = ref('')
 const resultImage = ref('')
+const resultPdf = ref('')
 const resultFileName = ref('')
+const resultMessage = ref('')
 const loading = ref(false)
+const isPdfFile = ref(false)
 
 // 水印设置
 const watermarkSettings = reactive({
@@ -191,8 +214,9 @@ const watermarkSettings = reactive({
 // 上传前处理
 const beforeUpload = (file) => {
   const isImage = file.type.startsWith('image/')
-  if (!isImage) {
-    message.error('只能上传图片文件！')
+  const isPdf = file.type === 'application/pdf'
+  if (!isImage && !isPdf) {
+    message.error('只能上传图片或 PDF 文件！')
     return false
   }
   
@@ -210,23 +234,31 @@ const handleFileChange = (info) => {
   const file = info.file
   selectedFile.value = file
   selectedFileName.value = file.name
-  
-  // 读取图片预览
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    originalImage.value = e.target.result
-  }
-  reader.readAsDataURL(file)
+  isPdfFile.value = file.type === 'application/pdf'
   
   // 清除之前的结果
   resultImage.value = ''
+  resultPdf.value = ''
   resultFileName.value = ''
+  resultMessage.value = ''
+  
+  if (isPdfFile.value) {
+    // PDF 文件不需要预览原图
+    originalImage.value = ''
+  } else {
+    // 读取图片预览
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      originalImage.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
 }
 
 // 生成水印
 const generateWatermark = async () => {
   if (!selectedFile.value) {
-    message.warning('请先上传图片')
+    message.warning('请先上传文件')
     return
   }
   
@@ -247,14 +279,29 @@ const generateWatermark = async () => {
     formData.append('angle', watermarkSettings.angle)
     formData.append('spacing', watermarkSettings.spacing)
     
-    const res = await watermarkApi.addWatermark(formData)
-    
-    if (res.success) {
-      resultImage.value = `data:${res.data.mimeType};base64,${res.data.imageBase64}`
-      resultFileName.value = res.data.fileName
-      message.success('水印生成成功！')
+    if (isPdfFile.value) {
+      // PDF 水印
+      const res = await watermarkApi.addPdfWatermark(formData)
+      
+      if (res.success) {
+        resultPdf.value = `data:${res.data.mimeType};base64,${res.data.pdfBase64}`
+        resultFileName.value = res.data.fileName
+        resultMessage.value = res.message
+        message.success(res.message || 'PDF 水印生成成功！')
+      } else {
+        message.error(res.message || '生成失败')
+      }
     } else {
-      message.error(res.message || '生成失败')
+      // 图片水印
+      const res = await watermarkApi.addWatermark(formData)
+      
+      if (res.success) {
+        resultImage.value = `data:${res.data.mimeType};base64,${res.data.imageBase64}`
+        resultFileName.value = res.data.fileName
+        message.success('水印生成成功！')
+      } else {
+        message.error(res.message || '生成失败')
+      }
     }
   } catch (error) {
     console.error('生成水印失败:', error)
@@ -264,21 +311,24 @@ const generateWatermark = async () => {
   }
 }
 
-// 下载图片
-const downloadImage = () => {
-  if (!resultImage.value) {
-    message.warning('没有可下载的图片')
+// 下载结果
+const downloadResult = () => {
+  const dataUrl = isPdfFile.value ? resultPdf.value : resultImage.value
+  const defaultName = isPdfFile.value ? 'watermarked.pdf' : 'watermarked.png'
+  
+  if (!dataUrl) {
+    message.warning('没有可下载的文件')
     return
   }
   
   const link = document.createElement('a')
-  link.href = resultImage.value
-  link.download = resultFileName.value || 'watermarked.png'
+  link.href = dataUrl
+  link.download = resultFileName.value || defaultName
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
   
-  message.success('图片已开始下载')
+  message.success(isPdfFile.value ? 'PDF 已开始下载' : '图片已开始下载')
 }
 </script>
 
@@ -404,6 +454,33 @@ body {
   max-height: 70vh;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pdf-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.pdf-preview-container {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pdf-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.pdf-preview-hint {
+  margin-top: 12px;
+  color: #666;
+  font-size: 14px;
 }
 
 .footer {
